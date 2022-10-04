@@ -7,11 +7,18 @@ const User = db.define("user", {
         primaryKey: true,
         defaultValue: DataTypes.UUIDV4,
         allowNull: false,
+        autoIncrement: true
     },
     email: {
         type: DataTypes.STRING(100),
         allowNull: false,
         unique: true,
+        validate: {
+            isEmail: {
+                args: true,
+                msg: 'invalid email'
+            }
+        }
     },
     password: {
         type: DataTypes.STRING,
@@ -20,6 +27,7 @@ const User = db.define("user", {
     userName: {
         type: DataTypes.STRING,
         allowNull: false,
+        unique: true
     },
     firstName: {
         type: DataTypes.STRING,

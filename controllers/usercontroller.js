@@ -3,6 +3,7 @@ const {models} = require("../models");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const { UniqueConstraintError } = require('sequelize/lib/errors');
+const validateJWT = require("../middleware/validate-jwt");
 
 
 
@@ -27,7 +28,7 @@ router.post("/register", async (req, res) => {
     } catch(err) {
         if (err instanceof UniqueConstraintError) {
             res.status(409).json({
-                message: "Email already in use"
+                message: "Email or Username already in use"
             })
         } else {
             res.status(500).json({
@@ -127,6 +128,5 @@ router.get('/', async (req, res) => {
         res.status(500).json({ error: err })
     }
     });
-
 
 module.exports = router;

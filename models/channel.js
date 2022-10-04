@@ -7,6 +7,7 @@ const Channel = db.define("channel", {
         primaryKey: true,
         defaultValue: DataTypes.UUIDV4,
         allowNull: false,
+        autoIncrement: true
     },
     name: {
         type: DataTypes.STRING,

@@ -3,35 +3,58 @@ const router = Express.Router();
 let validateJWT = require("../middleware/validate-jwt")
 const {models} = require('../models')
 
-router.post("/create", validateJWT, async (req, res) => {
-    const {entry, channelId} = req.body.channelentry
+router.post("/create/:id", validateJWT, async (req, res) => {
+    const {entry} = req.body.channelentry
     const channelMessage = {
         entry,
-        channelId: channelId,
-        userId: req.user.id
+        userId: req.user.id,
+        channelId: req.params.id
+    }
+    const query = {
+        where: {
+            id: req.params.id
+        }
     }
     try {
-        const newChannel = await models.ChannelEntryModel.create(channelMessage);
+        const currentChannelId =  await models.ChannelModel.findOne({
+            where: {
+                id: req.params.id
+            }
+        })
+       
+                const newChannel = await models.ChannelEntryModel.create(channelMessage, currentChannelId, query);
+                // const newChannel = await models.ChannelEntryModel.findOrCreate({
+                //     where: {
+                //         entry,
+                //         userId: req.user.id,
+                //         channelId: req.params.id
+                //     }
+                // })
         res.status(200).json(newChannel)
     } catch (err) {
         res.status(500).json({error: err})
     }
 })
-router.get("/", async (req, res) => {
+router.get("/:id", async (req, res) => {
+    
     try {
+        const query = {
+        where: {
+            id: req.params.id
+            }
+        }
         const messages = await models.ChannelEntryModel.findAll({
-            include: [
-                {
-                    model: models.ChannelModel,
-                    include: [
-                        {
-                            model: models.UserModel
-                        }
-                    ]
-                }
-            ]
+            include: [{
+                model: models.ChannelModel,
+                where: { id: req.params.id }
+            }],
         });
-        res.status(200).json(messages)
+        
+        // console.log(messages.getChannelEntrys())
+        
+        console.log(messages)
+        res.status(200).json({messages,
+            id: req.params.id})
     } catch (err) {
         res.status(500).json({error: err})
     }
