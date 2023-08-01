@@ -18,7 +18,7 @@ router.post("/register", async (req, res) => {
             lastName
         });
 
-        let token = jwt.sign({id: User.id}, process.env.JWT_SECRET, {expiresIn: 60 * 60 * 24});
+        let token = jwt.sign({userId: User.userId}, process.env.JWT_SECRET, {expiresIn: 60 * 60 * 24});
 
         res.status(201).json({
             message: "User successfully registered",
@@ -38,38 +38,20 @@ router.post("/register", async (req, res) => {
     }
 });
 
-// router.post('/register', async (req, res) =>{
-//     const {email, password, userName, firstName, lastName} = req.body.user;
-//     try {
-//         await models.UserModel.create({
-//             email: email,
-//             password: bcrypt.hashSync(password, 10),
-//             username: userName,
-//             firstname: firstName,
-//             lastname: lastName
-//         })
-//         .then(
-//             user => {
-//                 let token = jwt.sign({id: user.id}, process.env.JWT_SECRET, {expiresIn: 60*60*24});
-//                 res.status(201).json({
-//                     user: user,
-//                     message: 'user created',
-//                     sessionToken: token
-//                 });
+// router.get("/invited", validateJWT, async (req, res) => {
+//     try{
+//         const invitedUsers = await models.UserModel.findAll({
+//             where:{
+//                 channelId: req.params.channelId
 //             }
-//         )
-//     } catch (err) {
-//         if (err instanceof UniqueConstraintError) {
-//             res.status(409).json({
-//                 message: 'Username already in use'
-//             });
-//         } else {
-//             res.status(500).json({
-//                 error: `Failed to register user: ${err}`
-//             });
-//         };
-//     };
-// });
+//         });
+//         res.status(200).json(invitedUsers)
+//     } catch(err) {
+//         console.log(err)
+//         res.status(500).json({ error: err })
+//     }
+// })
+
 
 
 router.post("/login", async (req, res) => {
@@ -85,7 +67,7 @@ router.post("/login", async (req, res) => {
             
 
             if (passwordComparison) {
-                let token = jwt.sign({id: loginUser.id}, process.env.JWT_SECRET, {expiresIn: 60 * 60 * 24});
+                let token = jwt.sign({userId: loginUser.userId}, process.env.JWT_SECRET, {expiresIn: 60 * 60 * 24});
                 res.status(200).json({
                     user: loginUser,
                     message: "User successfully logged in",
@@ -112,16 +94,9 @@ router.post("/login", async (req, res) => {
 router.get('/', async (req, res) => {
     try {
         const userInfo = await models.UserModel.findAll({
-            include: [
-                {
-                    model: models.ChannelModel,
-                    include: [
-                        {
-                            model: models.ChannelEntryModel
-                        }
-                    ]
-                }
-            ]
+            where: {
+                channelId: req.channel.channelId
+            }
         });
         res.status(200).json(userInfo)
     } catch (err) {

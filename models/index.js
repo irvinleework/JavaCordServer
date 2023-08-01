@@ -1,33 +1,21 @@
 const db = require('../db');
-const { DataTypes } = require("sequelize");
 
 const UserModel = require('./user');
 const ChannelModel = require('./channel');
 const ChannelEntryModel = require('./channelentry');
+const ChannelKey = require('./channelkey')
 
-
-const ChannelKey = db.define("ChannelKey", {
-    id: {
-        type: DataTypes.UUID,
-        allowNull: false,
-        primaryKey: true,
-        defaultValue: DataTypes.UUIDV4
-    }
-})
-
-UserModel.belongsToMany(ChannelModel, {as: "Channel", foreignKey: "userId", through: "ChannelKey"});
-ChannelModel.belongsToMany(UserModel,{as: "User", foreignKey: "channelId", through: "ChannelKey"});
+UserModel.belongsToMany(ChannelModel, {as: "Channel", foreignKey: "userId", otherKey: "channelId", through: "channelKey"});
+ChannelModel.belongsToMany(UserModel,{as: "User", foreignKey: "channelId", otherKey:"userId", through: "channelKey"});
 ChannelModel.belongsTo(UserModel, {foreignKey: "owner"})
-UserModel.hasMany(ChannelKey);
-ChannelKey.belongsTo(UserModel);
-ChannelModel.hasMany(ChannelKey);
-ChannelKey.belongsTo(ChannelModel);
 UserModel.hasMany(ChannelEntryModel, {foreignKey: "userId"});
-ChannelEntryModel.belongsTo(UserModel);
-
-ChannelModel.hasMany(ChannelEntryModel, {foreignkey: "channelId"});
-ChannelEntryModel.belongsTo(ChannelModel)
-
+ChannelEntryModel.belongsTo(UserModel, {foreignKey: "userId"});
+ChannelModel.hasMany(ChannelEntryModel, {foreignKey: "channelId"});
+ChannelEntryModel.belongsTo(ChannelModel, {foreignKey: "channelId"})
+// UserModel.hasMany(ChannelKey)
+// ChannelKey.belongsTo(UserModel)
+// ChannelModel.hasMany(ChannelKey)
+// ChannelKey.belongsTo(ChannelModel)
 
 
 module.exports = {
@@ -35,6 +23,7 @@ module.exports = {
     models: {
         UserModel,
         ChannelModel,
-        ChannelEntryModel
+        ChannelEntryModel,
+        ChannelKey
     }
 }

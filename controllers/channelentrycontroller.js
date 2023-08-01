@@ -1,28 +1,49 @@
 const Express = require('express');
-const router = Express.Router();
+const channelEntry = Express.Router({mergeParams: true});
 let validateJWT = require("../middleware/validate-jwt")
 const {models} = require('../models')
 
-router.post("/create/:id", validateJWT, async (req, res) => {
+channelEntry.get("/", async (req, res) => {
+    const channelId = req.params.channelId
+    const userName = req.body.userName
+    try {
+        const query = {
+        where: {
+            channelId: channelId
+            }
+        }
+        const messages = await models.ChannelEntryModel.findAll({
+            include: [{
+                model: models.ChannelModel,
+                where: { channelId: channelId }
+            }, {
+                model: models.UserModel
+            }],
+        });
+        
+        // console.log(messages.getChannelEntrys())
+
+        res.status(200).json({messages})
+    } catch (err) {
+        res.status(500).json({error: err})
+    }
+});
+channelEntry.post("/create", validateJWT, async (req, res) => {
     const {entry} = req.body.channelentry
+    const channelId = req.params.channelId
     const channelMessage = {
         entry,
-        userId: req.user.id,
-        channelId: req.params.id
-    }
-    const query = {
-        where: {
-            id: req.params.id
-        }
+        userId: req.user.userId,
+        channelId: channelId
     }
     try {
         const currentChannelId =  await models.ChannelModel.findOne({
             where: {
-                id: req.params.id
+                channelId: channelId
             }
         })
-       
-                const newChannel = await models.ChannelEntryModel.create(channelMessage, currentChannelId, query);
+        
+                const newChannel = await models.ChannelEntryModel.create(channelMessage, currentChannelId);
                 // const newChannel = await models.ChannelEntryModel.findOrCreate({
                 //     where: {
                 //         entry,
@@ -30,36 +51,14 @@ router.post("/create/:id", validateJWT, async (req, res) => {
                 //         channelId: req.params.id
                 //     }
                 // })
+                
         res.status(200).json(newChannel)
     } catch (err) {
+        console.log(err)
         res.status(500).json({error: err})
     }
 })
-router.get("/:id", async (req, res) => {
-    
-    try {
-        const query = {
-        where: {
-            id: req.params.id
-            }
-        }
-        const messages = await models.ChannelEntryModel.findAll({
-            include: [{
-                model: models.ChannelModel,
-                where: { id: req.params.id }
-            }],
-        });
-        
-        // console.log(messages.getChannelEntrys())
-        
-        console.log(messages)
-        res.status(200).json({messages,
-            id: req.params.id})
-    } catch (err) {
-        res.status(500).json({error: err})
-    }
-});
-router.get("/:entry", async (req, res) => {
+channelEntry.get("/:entry", async (req, res) => {
     const {entry} = req.params
     try {
         const userEntry = await models.ChannelEntryModel.findAll({
@@ -70,13 +69,14 @@ router.get("/:entry", async (req, res) => {
         res.status(500).json({error: err})
     }
 });
-router.put("/update/:id", validateJWT, async (req, res) => {
+channelEntry.put("/update/:channelEntryId", validateJWT, async (req, res) => {
     const {entry} = req.body.channelentry;
-
+    const channelId = req.params.channelId
     const query = {
         where: {
-            id: req.params.id,
-            userId: req.user.id
+            channelEntryId: req.params.channelEntryId,
+            userId: req.user.userId,
+            channelId: channelId
         }
     }
     const updatedChannelEntry = {
@@ -90,15 +90,14 @@ router.put("/update/:id", validateJWT, async (req, res) => {
     }
 })
 
-router.delete("/delete/:id", validateJWT, async (req, res) => {
-    const ownerId = req.user.id;
-    const channelEntryId = req.params.id;
+channelEntry.delete("/delete/:channelEntryId", validateJWT, async (req, res) => {
+
 
     try {
         const query = {
             where: {
-                id: req.params.id,
-                userId: req.user.id
+                channelEntryId: req.params.channelEntryId,
+                userId: req.user.userId
             }
         };
         await models.ChannelEntryModel.destroy(query);
@@ -107,4 +106,4 @@ router.delete("/delete/:id", validateJWT, async (req, res) => {
         res.status(500).json({error: err})
     }
 })
-module.exports = router;
+module.exports = channelEntry;

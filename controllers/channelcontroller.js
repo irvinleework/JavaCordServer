@@ -4,15 +4,18 @@ let validateJWT = require("../middleware/validate-jwt")
 const { models } = require('../models')
 const Sequelize = require('sequelize');
 const Channel = require('../models/channel');
+const channelEntry = require('./channelentrycontroller');
+const User = require('../models/user');
+const ChannelKey = require('../models/channelkey');
 
 router.post('/create', validateJWT, async (req, res) => {
     const { name } = req.body.channel;
-    const channelEntry = {
+    const channelEntry1 = {
         name,
-        owner: req.user.id
+        owner: req.user.userId
     }
     try {
-        const newChannel = await models.ChannelModel.create(channelEntry);
+        const newChannel = await models.ChannelModel.create(channelEntry1);
         res.status(200).json(newChannel);
     } catch(err) {
         res.status(500).json({error: err});
@@ -29,11 +32,11 @@ router.get("/", async (req, res) => {
     });
 
 router.get("/mine", validateJWT, async (req, res) => {
-    let {userId} = req.user.id
+    let {userId} = req.user.userId
     try{
         const userChannels = await models.ChannelModel.findAll({
             where: {
-                owner: req.user.id
+                owner: req.user.userId
             }
         });
         res.status(200).json(userChannels)
@@ -42,13 +45,16 @@ router.get("/mine", validateJWT, async (req, res) => {
         res.status(500).json({ error: err })
     }
 })
-router.get("/invited", validateJWT, async (req, res) => {
+router.get("/invited/:channelId", validateJWT, async (req, res) => {
+    const channelId = req.params.channelId;
     try{
-        const invitedUsers = await models.ChannelModel.findAll({
+        const invitedUsers = await models.ChannelModel.findOne({
+            where: {
+                channelId: req.params.channelId
+            },
             include: [{
-                model: models.UserModel,
-                as: "User",
-                where: { id: req.user.id}
+                model: User,
+                as: "User"
             }]
         });
         res.status(200).json(invitedUsers)
@@ -57,14 +63,14 @@ router.get("/invited", validateJWT, async (req, res) => {
         res.status(500).json({ error: err })
     }
 })
-router.put("/update/:id", validateJWT, async (req, res) => {
+router.put("/update/:channelId", validateJWT, async (req, res) => {
     const { name } = req.body.channel;
-    const channelId = req.params.id;
+    const channelId = req.params.channelId;
 
     const query = {
         where: {
-            id: req.params.id,
-            userId: req.user.id
+            channelId: channelId,
+            owner: req.user.userId
         }
     }
     const updatedChannel = {
@@ -78,12 +84,12 @@ router.put("/update/:id", validateJWT, async (req, res) => {
     }
 });
 
-router.delete("/delete/:id", validateJWT, async (req, res) => {
+router.delete("/delete/:channelId", validateJWT, async (req, res) => {
     try {
         const query = {
             where: {
-                id: req.params.id,
-                userId: req.user.id
+                channelId: req.params.channelId,
+                owner: req.user.userId
             }
         };
         await models.ChannelModel.destroy(query);
@@ -93,12 +99,12 @@ router.delete("/delete/:id", validateJWT, async (req, res) => {
     }
 })
 
-router.post('/adduser/:id', validateJWT, async (req, res) => {
+router.post('/adduser/:channelId', validateJWT, async (req, res) => {
     const {userName} = req.body.user
     try {
     const currentChannel =  await models.ChannelModel.findOne({
         where: {
-            id: req.params.id
+            channelId: req.params.channelId
         }
     })
 
@@ -109,7 +115,7 @@ router.post('/adduser/:id', validateJWT, async (req, res) => {
     })
     const query = {
         where: {
-            userId: req.user.id
+            userId: req.user.userId
         }
     }
         const addUserName = await currentChannel.addUser(addUserToChannel, query)
@@ -119,5 +125,5 @@ router.post('/adduser/:id', validateJWT, async (req, res) => {
         res.status(500).json({error: err})
     }
 })
-
+router.use('/:channelId/channelentry', channelEntry)
 module.exports = router;
