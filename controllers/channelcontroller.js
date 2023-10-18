@@ -7,6 +7,7 @@ const Channel = require('../models/channel');
 const channelEntry = require('./channelentrycontroller');
 const User = require('../models/user');
 const ChannelKey = require('../models/channelkey');
+const { channelKeyController } = require('.');
 
 router.post('/create', validateJWT, async (req, res) => {
     const { name } = req.body.channel;
@@ -48,13 +49,14 @@ router.get("/mine", validateJWT, async (req, res) => {
 router.get("/invited/:channelId", validateJWT, async (req, res) => {
     const channelId = req.params.channelId;
     try{
-        const invitedUsers = await models.ChannelModel.findOne({
+        const invitedUsers = await models.ChannelModel.findAll({
             where: {
                 channelId: req.params.channelId
             },
             include: [{
-                model: User,
-                as: "User"
+                model: models.UserModel,
+                as: "User",
+                
             }]
         });
         res.status(200).json(invitedUsers)
@@ -63,6 +65,8 @@ router.get("/invited/:channelId", validateJWT, async (req, res) => {
         res.status(500).json({ error: err })
     }
 })
+
+
 router.put("/update/:channelId", validateJWT, async (req, res) => {
     const { name } = req.body.channel;
     const channelId = req.params.channelId;
@@ -70,7 +74,7 @@ router.put("/update/:channelId", validateJWT, async (req, res) => {
     const query = {
         where: {
             channelId: channelId,
-            owner: req.user.userId
+            owner: req.user.userIdd
         }
     }
     const updatedChannel = {

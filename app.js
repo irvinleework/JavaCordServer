@@ -10,6 +10,7 @@ app.use(express.json());
 app.use("/user", controllers.userController);
 
 app.use("/channel", controllers.channelController);
+
 // app.use("/channelentry", controllers.channelEntryController);
 
 app.use(require("./middleware/validate-jwt"));

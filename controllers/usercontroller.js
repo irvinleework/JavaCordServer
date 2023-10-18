@@ -103,5 +103,21 @@ router.get('/', async (req, res) => {
         res.status(500).json({ error: err })
     }
     });
+router.get('/invitedchannels', validateJWT, async (req, res) => {
+    try {
+        const invitedChannels = await models.UserModel.findAll({
+            where: {
+                userId: req.user.userId
+            },
+            include: [{
+                model: models.ChannelModel,
+                as: 'channel',
 
+            }]
+        });
+        res.status(200).json(invitedChannels)
+    } catch(err) {
+        res.status(500).json({error: err})
+    }
+})
 module.exports = router;
